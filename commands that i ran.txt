@@ -1,0 +1,91 @@
+//https://towardsdatascience.com/a-journey-into-big-data-with-apache-spark-part-1-5dfcc2bccdd2
+//add stuff to Dockerfile to get Java
+
+//build based on dockerfile:
+docker build .
+
+//tag it (give different name):
+docker build -t tonysparktest/spark:latest .
+
+//test the container. so far it contains only Java
+docker run -it --rm tonysparktest/spark:latest /bin/sh
+
+//update Dockerfile to get wget tar and bash
+
+//build again. FYI the tag is still there
+docker build -t tonysparktest/spark:latest .
+
+//update Dockerfile to download spark and untar it
+
+//test the container. so far it contains only Java
+docker run -it --rm tonysparktest/spark:latest /bin/sh
+
+//id 0a284d1d44ba
+//start spark master: the `hostname` is correctly written. it is NOT with '
+/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip `hostname` --port 7077 --webui-port 8080
+
+//run the container but this time exposing the Port and giving it the name "spark-master"
+docker run --rm -it --name spark-master --hostname spark-master -p 7077:7077 -p 8080:8080 tonysparktest/spark:latest /bin/sh
+
+// check the PS parameters
+docker ps
+
+//start spark master again:
+/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip `hostname` --port 7077 --webui-port 8080
+
+//navigate to http://localhost:8080/ for web UI
+
+//exit the container then run
+docker network create spark_network
+docker stop spark-master 
+docker rm spark-master
+
+//run this command to run the container in a network. It uses a newly defined network that we can use to attach Workers to
+docker run --rm -it --name spark-master --hostname spark-master -p 7077:7077 -p 8080:8080 --network spark_network tonysparktest/spark:latest /bin/sh
+
+//start spark master again:
+/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip `hostname` --port 7077 --webui-port 8080
+
+
+//To create a Worker and add it to the cluster, we can simply launch a new instance of the same docker image 
+//and run the command to start the Worker. use a new CMD window (CMDwindow2)
+docker run --rm -it --name spark-worker --hostname spark-worker --network spark_network tonysparktest/spark:latest /bin/sh
+
+//start spark worker in CMDWindow2:
+/spark/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port 8080 spark://spark-master:7077
+
+// check that the worker is listed: http://localhost:8080/
+
+
+// Let’s run a new instance of the docker image so we can run one of the examples provided when we installed Spark
+//Again, we can reuse the existing docker image and simply launch a new instance to use as the driver (the thing that submits the application to the cluster).
+// use CMDwindow3
+docker run --rm -it --network spark_network tonysparktest/spark:latest /bin/sh
+
+/spark/bin/spark-submit --master spark://spark-master:7077 --class org.apache.spark.examples.SparkPi spark/examples/jars/spark-examples_2.11-2.4.0.jar 1000
+
+//we can see the value of PI now in the output of CMDwindow3
+
+
+
+
+//DONE. next step: docker compose
+//create a start-master.sh and start-worker.sh script which is essentially what we manually typed in the CMDWindow1 and CMDwindow2
+//make SURE that the sh scripts are with ONLY UNIX LF, no CRLF!!
+//update Dockerfile
+
+//build again. FYI the tag is still there
+docker build -t tonysparktest/spark:latest .
+
+docker run -it --rm tonysparktest/spark:latest /bin/sh
+ls -la
+//one should see the shell scripts in the container
+
+//create the docker-compose.yml file. there we define what containers to start (instead of doing manually)
+//and what scripts to run (the start-master.sh etc)
+
+//start docker compose with 3 workers:
+docker-compose up --scale spark-worker=3
+
+
+
