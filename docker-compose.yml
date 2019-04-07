@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.5"
 services:
   spark-master:
     image: tonysparktest/spark:latest
@@ -8,7 +8,7 @@ services:
       - "8080:8080"
       - "7077:7077"
     networks:
-      - spark-network
+      - spark_network
     environment:
       - "SPARK_LOCAL_IP=spark-master"
       - "SPARK_MASTER_PORT=7077"
@@ -21,13 +21,14 @@ services:
     ports:
       - 8080
     networks:
-      - spark-network
+      - spark_network
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_WORKER_WEBUI_PORT=8080"
     command: "sh start-worker.sh"
 networks:
-  spark-network:
+  spark_network:
+    name: spark_network
     driver: bridge
     ipam:
       driver: default

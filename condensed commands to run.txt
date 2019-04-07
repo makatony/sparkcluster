@@ -6,13 +6,19 @@ docker run --rm -it --name spark-master --hostname spark-master -p 7077:7077 -p 
 //run this in the CLI inside the container
 /spark/bin/spark-class org.apache.spark.deploy.master.Master --ip `hostname` --port 7077 --webui-port 8080
 
-
 //in a different CMD window, open a worker:
 docker run --rm -it --name spark-worker --hostname spark-worker --network spark_network tonysparktest/spark:latest /bin/sh
 
 /spark/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port 8080 spark://spark-master:7077
 
 // check that the worker is in http://localhost:8080/
+
+
+
+//or just use:
+docker build -t tonysparktest/spark:latest .
+docker-compose up
+
 
 
 //in a third CMD window, submit a job:
@@ -23,5 +29,6 @@ docker run --rm -it --network spark_network tonysparktest/spark:latest /bin/sh
 //check that the job has been done: http://localhost:8080/
 
 
-//or just use:
-docker-compose up
+
+
+
